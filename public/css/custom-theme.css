@@ -1,0 +1,206 @@
+/* Custom Theme Color - #Ac9b73 */
+
+/* Navbar Background */
+.navbar-bg {
+    background-color: #ac9b73 !important;
+}
+
+/* Primary Buttons */
+.btn-primary {
+    background-color: #ac9b73 !important;
+    border-color: #ac9b73 !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    background-color: #9a8a65 !important;
+    border-color: #9a8a65 !important;
+}
+
+.btn-primary:not(:disabled):not(.disabled):active,
+.btn-primary:not(:disabled):not(.disabled).active {
+    background-color: #8a7a55 !important;
+    border-color: #8a7a55 !important;
+}
+
+/* Section Title */
+.section .section-title:before {
+    background-color: #ac9b73 !important;
+}
+
+.section .section-header .section-header-back .btn:hover {
+    background-color: #ac9b73 !important;
+}
+
+/* Nav Tabs & Pills */
+.nav-tabs .nav-item .nav-link {
+    color: #ac9b73 !important;
+}
+
+.nav-pills .nav-link.active,
+.nav-pills .show > .nav-link {
+    background-color: #ac9b73 !important;
+}
+
+.nav-pills .nav-item .nav-link {
+    color: #ac9b73 !important;
+}
+
+.nav-pills .nav-item .nav-link:hover {
+    background-color: rgba(172, 155, 115, 0.1) !important;
+}
+
+/* Links & Text */
+.text-primary {
+    color: #ac9b73 !important;
+}
+
+a.bb {
+    border-bottom-color: #ac9b73 !important;
+}
+
+/* Background */
+.bg-primary {
+    background-color: #ac9b73 !important;
+}
+
+/* Progress Bar */
+.progress-bar {
+    background-color: #ac9b73 !important;
+}
+
+/* Badges */
+.badge-primary {
+    background-color: #ac9b73 !important;
+}
+
+/* Custom Checkbox */
+.custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
+    background-color: #ac9b73 !important;
+    border-color: #ac9b73 !important;
+}
+
+/* Form Controls Focus */
+.form-control:focus {
+    border-color: #ac9b73 !important;
+    box-shadow: 0 0 0 0.2rem rgba(172, 155, 115, 0.25) !important;
+}
+
+/* Dropdown Active */
+.dropdown-item.active,
+.dropdown-item:active {
+    background-color: #ac9b73 !important;
+}
+
+/* Pagination */
+.page-item.active .page-link {
+    background-color: #ac9b73 !important;
+    border-color: #ac9b73 !important;
+}
+
+.page-link {
+    color: #ac9b73 !important;
+}
+
+.page-link:hover {
+    color: #8a7a55 !important;
+}
+
+/* Sidebar Active */
+.main-sidebar .sidebar-menu li.active > a {
+    color: #ac9b73 !important;
+}
+
+.main-sidebar .sidebar-menu li.active > a:before {
+    background-color: #ac9b73 !important;
+}
+
+/* Card Header */
+.card-header-action .btn-primary {
+    background-color: #ac9b73 !important;
+    border-color: #ac9b73 !important;
+}
+
+/* Stats Card Icon */
+.card-stats .card-stats-title,
+.card-stats .card-stats-compare {
+    color: #ac9b73 !important;
+}
+
+/* Alert Primary */
+.alert-primary {
+    background-color: rgba(172, 155, 115, 0.2) !important;
+    border-color: #ac9b73 !important;
+    color: #8a7a55 !important;
+}
+
+/* Timeline */
+.timeline .timeline-header:before {
+    background-color: #ac9b73 !important;
+}
+
+/* Bootstrap Toggle */
+.toggle.btn-primary {
+    background-color: #ac9b73 !important;
+    border-color: #ac9b73 !important;
+}
+
+/* iziToast */
+.iziToast.iziToast-color-blue {
+    background: #ac9b73 !important;
+}
+
+/* CSS Variables */
+:root {
+    --primary: #ac9b73 !important;
+}
+
+/* Other Primary Color References */
+body.layout-3
+    .navbar.navbar-secondary
+    .navbar-nav
+    > .nav-item.active
+    > .nav-link,
+body.layout-3
+    .navbar.navbar-secondary
+    .navbar-nav
+    > .nav-item
+    .dropdown-menu
+    .nav-item.active
+    > .nav-link,
+body.layout-3
+    .navbar.navbar-secondary
+    .navbar-nav
+    > .nav-item
+    .dropdown-menu
+    .nav-item
+    .nav-link:focus {
+    background-color: #ac9b73 !important;
+}
+
+.table-primary,
+.table-primary > th,
+.table-primary > td {
+    background-color: rgba(172, 155, 115, 0.2) !important;
+}
+
+/* Pricing */
+.pricing .pricing-item.pricing-highlight {
+    border-color: #ac9b73 !important;
+}
+
+.pricing .pricing-item .pricing-cta .btn {
+    background-color: #ac9b73 !important;
+    border-color: #ac9b73 !important;
+}
+
+/* Activities */
+.activities .activity:before {
+    background-color: #ac9b73 !important;
+}
+
+/* Weather */
+.weather .weather-forecast .weather-forecast-item.weather-forecast-item-active {
+    background-color: #ac9b73 !important;
+}
