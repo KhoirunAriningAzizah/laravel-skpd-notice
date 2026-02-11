@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\PenerimaanNotice;
 use App\Models\Layanan;
+use App\Models\Lokasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Exports\PenerimaanNoticeExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PenerimaanNoticeController extends Controller
 {
@@ -66,7 +69,28 @@ class PenerimaanNoticeController extends Controller
             $query->whereDate('tanggal', '<=', $request->tanggal_sampai);
         }
 
+        // Filter by lokasi if provided
+        if ($request->has('lokasi_id') && $request->lokasi_id != '') {
+            $query->where('lokasi_id', $request->lokasi_id);
+        }
+
         $penerimaans = $query->latest('tanggal')->paginate(10);
+
+        // Get lokasi list based on role
+        $lokasiList = collect();
+        if (Auth::user()->role == 'superadmin') {
+            // Superadmin: see all lokasi
+            $lokasiList = Lokasi::with('layanan')->orderBy('nama')->get();
+        } elseif (Auth::user()->role == 'admin' || Auth::user()->role == 'kasir') {
+            // Admin/Kasir: only lokasi with same layanan_id
+            $userLayananId = Auth::user()->layanan_id;
+            if ($userLayananId) {
+                $lokasiList = Lokasi::where('layanan_id', $userLayananId)
+                    ->with('layanan')
+                    ->orderBy('nama')
+                    ->get();
+            }
+        }
 
         // Check if kasir can add new penerimaan (previous saldo must be 0)
         $canAddPenerimaan = true;
@@ -81,7 +105,7 @@ class PenerimaanNoticeController extends Controller
 
         // dd($penerimaans);
 
-        return view('layouts.penerimaan-notices.index', compact('penerimaans', 'canAddPenerimaan', 'latestPenerimaanSaldo', 'isReadOnly', 'kasirList'));
+        return view('layouts.penerimaan-notices.index', compact('penerimaans', 'canAddPenerimaan', 'latestPenerimaanSaldo', 'isReadOnly', 'kasirList', 'lokasiList'));
     }
 
     /**
@@ -173,7 +197,7 @@ class PenerimaanNoticeController extends Controller
             }
         }
 
-        $penerimaanNotice->load(['lokasi', 'creator', 'pengeluaran.pemakaianRanges', 'pengeluaran.batalRusak', 'pengeluaran.buktiKas', 'saldo']);
+        $penerimaanNotice->load(['lokasi', 'creator', 'pengeluaran.creator', 'pengeluaran.lokasi', 'pengeluaran.pemakaianRanges', 'pengeluaran.batalRusak', 'pengeluaran.buktiKas', 'saldo']);
 
         // Check if kasir can add pengeluaran
         $canAddPengeluaran = false;
@@ -243,5 +267,41 @@ class PenerimaanNoticeController extends Controller
 
         return redirect()->route('penerimaan-notices.index')
             ->with('success', 'Penerimaan Notice berhasil diperbarui.');
+    }
+
+    /**
+     * Export penerimaan notices to Excel (untuk Kasir)
+     */
+    public function export(Request $request)
+    {
+        $user = Auth::user();
+        $dateFrom = $request->has('tanggal_dari') && $request->tanggal_dari != '' ? $request->tanggal_dari : null;
+        $dateTo = $request->has('tanggal_sampai') && $request->tanggal_sampai != '' ? $request->tanggal_sampai : null;
+
+        $fileName = 'penerimaan-notice-' . ($dateFrom ? date('Ymd', strtotime($dateFrom)) : 'all') . '.xlsx';
+
+        return Excel::download(
+            new PenerimaanNoticeExport($user->id, 'kasir', null, $dateFrom, $dateTo),
+            $fileName
+        );
+    }
+
+    /**
+     * Export penerimaan notices to Excel (untuk Admin)
+     */
+    public function exportAdmin(Request $request)
+    {
+        $user = Auth::user();
+        $layananId = $user->layanan_id;
+        $kasirId = $request->has('kasir_id') && $request->kasir_id != '' ? $request->kasir_id : null;
+        $dateFrom = $request->has('tanggal_dari') && $request->tanggal_dari != '' ? $request->tanggal_dari : null;
+        $dateTo = $request->has('tanggal_sampai') && $request->tanggal_sampai != '' ? $request->tanggal_sampai : null;
+
+        $fileName = 'penerimaan-notice-admin-' . ($dateFrom ? date('Ymd', strtotime($dateFrom)) : 'all') . '.xlsx';
+
+        return Excel::download(
+            new PenerimaanNoticeExport($user->id, 'admin', $layananId, $dateFrom, $dateTo, $kasirId),
+            $fileName
+        );
     }
 }

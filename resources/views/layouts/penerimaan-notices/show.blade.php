@@ -119,7 +119,7 @@
                                                             class="badge badge-info">{{ $penerimaanNotice->lokasi->nama }}</span>
                                                         <br>
                                                         <small class="text-muted">Kode:
-                                                            {{ $penerimaanNotice->lokasi->kode_kasir }}</small>
+                                                            {{ $penerimaanNotice->lokasi->layanan->kode_kasir }}</small>
                                                     @else
                                                         -
                                                     @endif
@@ -150,8 +150,10 @@
                                     <h4>Riwayat Pengeluaran</h4>
                                 </div>
                                 <div class="card-body p-0">
-                                    <div class="table-responsive">
-                                        <table class="table table-bordered table-striped table-md">
+                                    <div class="table-responsive"
+                                        style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                                        <table class="table table-bordered table-striped table-md"
+                                            style="min-width: 1400px; white-space: nowrap;">
                                             <thead>
                                                 <tr>
                                                     <th rowspan="2" style="vertical-align: middle; text-align: center;">
@@ -170,6 +172,12 @@
                                                         JML TOTAL</th>
                                                     <th colspan="2"
                                                         style="text-align: center; background-color: #f8f9fa;">SALDO</th>
+                                                    <th rowspan="2"
+                                                        style="vertical-align: middle; text-align: center; background-color: #e8f4f8;">
+                                                        DIBUAT OLEH</th>
+                                                    <th rowspan="2"
+                                                        style="vertical-align: middle; text-align: center; background-color: #ffe8f0;">
+                                                        LOKASI</th>
                                                 </tr>
                                                 <tr>
                                                     <th style="text-align: center; background-color: #f0f0f0;">NOMOR</th>
@@ -191,6 +199,9 @@
                                                         $buktiKas = $pengeluaran->buktiKas->first();
                                                         $saldo = $pengeluaran->saldo;
                                                         $maxRows = max($pemakaianRanges->count(), 1);
+
+                                                        // dd($pengeluaran->lokasi);
+
                                                     @endphp
 
                                                     @for ($i = 0; $i < $maxRows; $i++)
@@ -278,6 +289,14 @@
                                                                     @else
                                                                         <span class="badge badge-secondary">0</span>
                                                                     @endif
+                                                                </td>
+                                                                <td rowspan="{{ $maxRows }}"
+                                                                    style="vertical-align: middle; text-align: center; background-color: #e8f4f8;">
+                                                                    {{ $pengeluaran->creator ? $pengeluaran->creator->name : '-' }}
+                                                                </td>
+                                                                <td rowspan="{{ $maxRows }}"
+                                                                    style="vertical-align: middle; text-align: center; background-color: #ffe8f0;">
+                                                                    {{ $pengeluaran->lokasi ? $pengeluaran->lokasi->nama : '-' }}
                                                                 </td>
                                                             @endif
                                                         </tr>

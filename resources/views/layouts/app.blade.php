@@ -29,6 +29,26 @@
 
     <!-- Additional CSS (if any) -->
     @stack('css')
+
+    <!-- Watermark Background Style -->
+    <style>
+        .main-wrapper::after {
+            content: '';
+            position: fixed;
+            top: 60%;
+            left: 60%;
+            transform: translate(-50%, -50%);
+            width: 800px;
+            height: 800px;
+            background-image: url('{{ asset('img/bg-logo.png') }}');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.3;
+            z-index: 0;
+            pointer-events: none;
+        }
+    </style>
 </head>
 
 <body>

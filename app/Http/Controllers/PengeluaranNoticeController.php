@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Lokasi;
 use App\Models\PenerimaanNotice;
 use App\Models\PengeluaranNotice;
 use App\Models\PengeluaranPemakaianRange;
@@ -66,7 +67,11 @@ class PengeluaranNoticeController extends Controller
         // Get available saldo
         $saldoNotices = $penerimaanNotice->saldo()->get();
 
-        return view('layouts.pengeluaran-notices.create', compact('penerimaanNotice', 'saldoNotices'));
+        // Get filtered lokasi by user's layanan_id
+        $userLayananId = Auth::user()->layanan_id;
+        $lokasis = Lokasi::where('layanan_id', $userLayananId)->get();
+
+        return view('layouts.pengeluaran-notices.create', compact('penerimaanNotice', 'saldoNotices', 'lokasis'));
     }
 
     /**

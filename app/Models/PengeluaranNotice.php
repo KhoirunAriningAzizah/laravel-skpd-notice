@@ -49,7 +49,7 @@ class PengeluaranNotice extends Model
      */
     public function lokasi(): BelongsTo
     {
-        return $this->belongsTo(Layanan::class, 'lokasi_id');
+        return $this->belongsTo(Lokasi::class, 'lokasi_id');
     }
 
     /**

@@ -148,6 +148,24 @@
                                         @enderror
                                     </div>
 
+                                    <!-- Lokasi -->
+                                    <div class="form-group">
+                                        <label for="lokasi_id">Lokasi <span class="text-danger">*</span></label>
+                                        <select class="form-control @error('lokasi_id') is-invalid @enderror" id="lokasi_id"
+                                            name="lokasi_id" required>
+                                            <option value="">-- Pilih Lokasi --</option>
+                                            @foreach ($lokasis as $lokasi)
+                                                <option value="{{ $lokasi->id }}"
+                                                    {{ old('lokasi_id') == $lokasi->id ? 'selected' : '' }}>
+                                                    {{ $lokasi->nama }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('lokasi_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
                                     <hr>
 
                                     <!-- SECTION 1: PEMAKAIAN -->

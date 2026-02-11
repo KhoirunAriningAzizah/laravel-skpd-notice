@@ -36,11 +36,13 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('admin')->group(function () {
             Route::get('penerimaan-notices', [App\Http\Controllers\PenerimaanNoticeController::class, 'index'])->name('admin.penerimaan-notices.index');
             Route::get('penerimaan-notices/{penerimaan_notice}', [App\Http\Controllers\PenerimaanNoticeController::class, 'show'])->name('admin.penerimaan-notices.show');
+            Route::get('penerimaan-notices-export', [App\Http\Controllers\PenerimaanNoticeController::class, 'exportAdmin'])->name('admin.penerimaan-notices.export');
         });
     });
 
     // Penerimaan Notices Management (Only Kasir)
     Route::middleware('kasir')->group(function () {
+        Route::get('penerimaan-notices/export', [App\Http\Controllers\PenerimaanNoticeController::class, 'export'])->name('penerimaan-notices.export');
         Route::resource('penerimaan-notices', App\Http\Controllers\PenerimaanNoticeController::class)->except(['destroy']);
         Route::resource('pengeluaran-notices', App\Http\Controllers\PengeluaranNoticeController::class)->except(['destroy', 'show', 'edit', 'update']);
     });

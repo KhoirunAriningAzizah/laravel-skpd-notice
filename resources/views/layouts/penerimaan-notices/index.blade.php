@@ -43,7 +43,7 @@
             <div class="section-body">
                 <div class="row">
                     <div class="col-12">
-                        <div class="card">
+                        <div class="card" style="opacity: 0.93">
                             <div class="card-header">
                                 <h4>Daftar Penerimaan Notice</h4>
                                 <div class="card-header-action">
@@ -95,21 +95,35 @@
                                                         </div>
                                                     </div>
                                                 @endif
-                                                <div class="{{ $isReadOnly ? 'col-md-2' : 'col-md-3' }}">
+                                                <div class="col-md-3">
+                                                    <div class="form-group">
+                                                        <label>Lokasi</label>
+                                                        <select name="lokasi_id" class="form-control">
+                                                            <option value="">Semua Lokasi</option>
+                                                            @foreach ($lokasiList as $lokasi)
+                                                                <option value="{{ $lokasi->id }}"
+                                                                    {{ request('lokasi_id') == $lokasi->id ? 'selected' : '' }}>
+                                                                    {{ $lokasi->nama }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="{{ $isReadOnly ? 'col-md-2' : 'col-md-2' }}">
                                                     <div class="form-group">
                                                         <label>Tanggal Dari</label>
                                                         <input type="date" name="tanggal_dari" class="form-control"
                                                             value="{{ request('tanggal_dari') }}">
                                                     </div>
                                                 </div>
-                                                <div class="{{ $isReadOnly ? 'col-md-2' : 'col-md-3' }}">
+                                                <div class="{{ $isReadOnly ? 'col-md-2' : 'col-md-2' }}">
                                                     <div class="form-group">
                                                         <label>Tanggal Sampai</label>
                                                         <input type="date" name="tanggal_sampai" class="form-control"
                                                             value="{{ request('tanggal_sampai') }}">
                                                     </div>
                                                 </div>
-                                                <div class="{{ $isReadOnly ? 'col-md-3' : 'col-md-4' }}">
+                                                <div class="{{ $isReadOnly ? 'col-md-2' : 'col-md-3' }}">
                                                     <div class="form-group">
                                                         <label>Cari</label>
                                                         <input type="text" name="search" class="form-control"
@@ -122,6 +136,15 @@
                                                         <label>&nbsp;</label>
                                                         <button class="btn btn-primary btn-block" type="submit">
                                                             <i class="fas fa-search"></i> Filter
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <div class="form-group">
+                                                        <label>&nbsp;</label>
+                                                        <button class="btn btn-success btn-block" type="button"
+                                                            onclick="exportExcel()">
+                                                            <i class="fas fa-file-excel"></i> Export Excel
                                                         </button>
                                                     </div>
                                                 </div>
@@ -228,4 +251,36 @@
 
     <!-- Page Specific JS File -->
     <script src="{{ asset('js/page/features-posts.js') }}"></script>
+
+    <script>
+        function exportExcel() {
+            // Ambil parameter filter dari form
+            @if ($isReadOnly)
+                const kasirId = document.querySelector('select[name="kasir_id"]').value;
+            @endif
+            const tanggalDari = document.querySelector('input[name="tanggal_dari"]').value;
+            const tanggalSampai = document.querySelector('input[name="tanggal_sampai"]').value;
+
+            // Build URL dengan query string
+            @if ($isReadOnly)
+                let exportUrl = "{{ route('admin.penerimaan-notices.export') }}";
+            @else
+                let exportUrl = "{{ route('penerimaan-notices.export') }}";
+            @endif
+
+            const params = new URLSearchParams();
+            @if ($isReadOnly)
+                if (kasirId) params.append('kasir_id', kasirId);
+            @endif
+            if (tanggalDari) params.append('tanggal_dari', tanggalDari);
+            if (tanggalSampai) params.append('tanggal_sampai', tanggalSampai);
+
+            if (params.toString()) {
+                exportUrl += '?' + params.toString();
+            }
+
+            // Redirect ke URL export
+            window.location.href = exportUrl;
+        }
+    </script>
 @endpush
