@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Tambah Pengeluaran Notice')
+@section('title', 'Edit Pengeluaran Notice')
 
 @push('style')
     <style>
@@ -22,10 +22,6 @@
 
         .form-group label {
             font-weight: 600;
-        }
-
-        .btn-add-range {
-            margin-top: 10px;
         }
 
         .pemakaian-range-item {
@@ -72,18 +68,16 @@
         <section class="section">
             <div class="section-header">
                 <div class="section-header-back">
-                    <a href="{{ route('penerimaan-notices.show', $penerimaanNotice->id) }}" class="btn btn-icon">
+                    <a href="{{ route('admin.pengeluaran-notices.index') }}" class="btn btn-icon">
                         <i class="fas fa-arrow-left"></i>
                     </a>
                 </div>
-                <h1>Tambah Pengeluaran Notice</h1>
+                <h1>Edit Pengeluaran Notice</h1>
                 <div class="section-header-breadcrumb">
                     <div class="breadcrumb-item active"><a href="{{ route('home') }}">Dashboard</a></div>
-                    <div class="breadcrumb-item"><a href="{{ route('penerimaan-notices.index') }}">Penerimaan Notice</a>
-                    </div>
-                    <div class="breadcrumb-item"><a
-                            href="{{ route('penerimaan-notices.show', $penerimaanNotice->id) }}">Detail</a></div>
-                    <div class="breadcrumb-item">Tambah Pengeluaran</div>
+                    <div class="breadcrumb-item"><a href="{{ route('admin.pengeluaran-notices.index') }}">Pengeluaran
+                            Notice</a></div>
+                    <div class="breadcrumb-item">Edit</div>
                 </div>
             </div>
 
@@ -137,30 +131,31 @@
                                 <div class="row">
                                     <div class="col-md-3">
                                         <strong>Tanggal:</strong><br>
-                                        {{ $penerimaanNotice->tanggal->format('d F Y') }}
+                                        {{ $pengeluaranNotice->penerimaan->tanggal->format('d F Y') }}
                                     </div>
                                     <div class="col-md-3">
                                         <strong>Nomor Awal:</strong><br>
-                                        {{ number_format($penerimaanNotice->nomor_awal, 0, ',', '.') }}
+                                        {{ number_format($pengeluaranNotice->penerimaan->nomor_awal, 0, ',', '.') }}
                                     </div>
                                     <div class="col-md-3">
                                         <strong>Nomor Akhir:</strong><br>
-                                        {{ number_format($penerimaanNotice->nomor_akhir, 0, ',', '.') }}
+                                        {{ number_format($pengeluaranNotice->penerimaan->nomor_akhir, 0, ',', '.') }}
                                     </div>
                                     <div class="col-md-3">
                                         <strong>Jumlah:</strong><br>
                                         <span class="badge badge-primary badge-lg">
-                                            {{ number_format($penerimaanNotice->jumlah, 0, ',', '.') }} Notice
+                                            {{ number_format($pengeluaranNotice->penerimaan->jumlah, 0, ',', '.') }} Notice
                                         </span>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Form Pengeluaran -->
-                        <form action="{{ route('pengeluaran-notices.store') }}" method="POST" id="formPengeluaran">
+                        <!-- Form Edit Pengeluaran -->
+                        <form action="{{ route('admin.pengeluaran-notices.update', $pengeluaranNotice->id) }}"
+                            method="POST" id="formPengeluaran">
                             @csrf
-                            <input type="hidden" name="penerimaan_id" value="{{ $penerimaanNotice->id }}">
+                            @method('PUT')
 
                             <div class="card">
                                 <div class="card-body">
@@ -168,27 +163,10 @@
                                     <div class="form-group">
                                         <label for="tanggal">Tanggal Pengeluaran <span class="text-danger">*</span></label>
                                         <input type="date" class="form-control @error('tanggal') is-invalid @enderror"
-                                            id="tanggal" name="tanggal" value="{{ old('tanggal', date('Y-m-d')) }}"
+                                            id="tanggal" name="tanggal"
+                                            value="{{ old('tanggal', $pengeluaranNotice->tanggal->format('Y-m-d')) }}"
                                             required>
                                         @error('tanggal')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-
-                                    <!-- Lokasi -->
-                                    <div class="form-group">
-                                        <label for="lokasi_id">Lokasi <span class="text-danger">*</span></label>
-                                        <select class="form-control @error('lokasi_id') is-invalid @enderror" id="lokasi_id"
-                                            name="lokasi_id" required>
-                                            <option value="">-- Pilih Lokasi --</option>
-                                            @foreach ($lokasis as $lokasi)
-                                                <option value="{{ $lokasi->id }}"
-                                                    {{ old('lokasi_id') == $lokasi->id ? 'selected' : '' }}>
-                                                    {{ $lokasi->nama }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        @error('lokasi_id')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -202,68 +180,98 @@
                                         </div>
 
                                         <div id="pemakaianContainer">
-                                            <div class="pemakaian-range-item" data-index="0">
-                                                <div class="row">
-                                                    <div class="col-md-5">
-                                                        <div class="form-group">
-                                                            <label>Nomor Awal <span class="text-danger">*</span></label>
-                                                            <input type="number" class="form-control nomor-awal"
-                                                                name="pemakaian[0][nomor_awal]"
-                                                                value="{{ old('pemakaian.0.nomor_awal') }}"
-                                                                min="{{ $penerimaanNotice->nomor_awal }}"
-                                                                max="{{ $penerimaanNotice->nomor_akhir }}" required>
+                                            @foreach ($pengeluaranNotice->pemakaianRanges as $index => $range)
+                                                <div class="pemakaian-range-item" data-index="{{ $index }}">
+                                                    @if ($index > 0)
+                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                            <strong>Range {{ $index + 1 }}</strong>
+                                                            <button type="button"
+                                                                class="btn btn-sm btn-danger btn-remove-pemakaian">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
                                                         </div>
-                                                    </div>
-                                                    <div class="col-md-5">
-                                                        <div class="form-group">
-                                                            <label>Nomor Akhir <span class="text-danger">*</span></label>
-                                                            <input type="number" class="form-control nomor-akhir"
-                                                                name="pemakaian[0][nomor_akhir]"
-                                                                value="{{ old('pemakaian.0.nomor_akhir') }}"
-                                                                min="{{ $penerimaanNotice->nomor_awal }}"
-                                                                max="{{ $penerimaanNotice->nomor_akhir }}" required>
+                                                    @else
+                                                        <div class="mb-2">
+                                                            <strong>Range 1</strong>
                                                         </div>
-                                                    </div>
-                                                    <div class="col-md-2">
-                                                        <div class="form-group">
-                                                            <label>Jumlah</label>
-                                                            <input type="text" class="form-control jumlah-pemakaian"
-                                                                readonly value="0">
+                                                    @endif
+                                                    <div class="row">
+                                                        <div class="col-md-5">
+                                                            <div class="form-group">
+                                                                <label>Nomor Awal <span class="text-danger">*</span></label>
+                                                                <input type="number" class="form-control nomor-awal"
+                                                                    name="pemakaian[{{ $index }}][nomor_awal]"
+                                                                    value="{{ old('pemakaian.' . $index . '.nomor_awal', $range->nomor_awal) }}"
+                                                                    min="{{ $pengeluaranNotice->penerimaan->nomor_awal }}"
+                                                                    max="{{ $pengeluaranNotice->penerimaan->nomor_akhir }}"
+                                                                    required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-5">
+                                                            <div class="form-group">
+                                                                <label>Nomor Akhir <span
+                                                                        class="text-danger">*</span></label>
+                                                                <input type="number" class="form-control nomor-akhir"
+                                                                    name="pemakaian[{{ $index }}][nomor_akhir]"
+                                                                    value="{{ old('pemakaian.' . $index . '.nomor_akhir', $range->nomor_akhir) }}"
+                                                                    min="{{ $pengeluaranNotice->penerimaan->nomor_awal }}"
+                                                                    max="{{ $pengeluaranNotice->penerimaan->nomor_akhir }}"
+                                                                    required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-2">
+                                                            <div class="form-group">
+                                                                <label>Jumlah</label>
+                                                                <input type="text" class="form-control jumlah-pemakaian"
+                                                                    readonly
+                                                                    value="{{ $range->nomor_akhir - $range->nomor_awal + 1 }}">
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            @endforeach
                                         </div>
 
-                                        {{-- <button type="button" class="btn btn-primary btn-add-range" id="btnAddPemakaian">
+                                        <button type="button" class="btn btn-success btn-add-range" id="btnAddPemakaian">
                                             <i class="fas fa-plus"></i> Tambah Range Pemakaian
-                                        </button> --}}
+                                        </button>
 
-                                        <div class="mt-3">
-                                            <strong>Jumlah Pemakaian (setelah dikurangi Batal/Rusak): <span
-                                                    id="totalPemakaian" class="badge badge-info badge-lg">0</span>
-                                                Notice</strong>
+                                        <div class="alert alert-info mt-3">
+                                            <strong>Total Pemakaian:</strong> <span id="totalPemakaian">0</span> notice
                                         </div>
                                     </div>
 
                                     <!-- SECTION 2: BATAL / RUSAK -->
                                     <div class="section-form">
                                         <div class="section-title">
-                                            <i class="fas fa-ban"></i> SECTION 2: BATAL / RUSAK
+                                            <i class="fas fa-exclamation-triangle"></i> SECTION 2: BATAL / RUSAK (Opsional)
                                         </div>
 
                                         <div id="batalRusakContainer">
-                                            <!-- Dynamic batal/rusak items will be added here -->
+                                            @foreach ($pengeluaranNotice->batalRusak as $index => $batal)
+                                                <div class="batal-rusak-item" data-index="{{ $index }}">
+                                                    <div style="flex: 1;">
+                                                        <input type="number" class="form-control batal-rusak-input"
+                                                            name="batal_rusak[]" placeholder="Nomor Notice"
+                                                            value="{{ old('batal_rusak.' . $index, $batal->nomor_notice) }}"
+                                                            min="{{ $pengeluaranNotice->penerimaan->nomor_awal }}"
+                                                            max="{{ $pengeluaranNotice->penerimaan->nomor_akhir }}"
+                                                            required>
+                                                    </div>
+                                                    <button type="button" class="btn btn-sm btn-danger btn-remove-batal">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            @endforeach
                                         </div>
 
-                                        <button type="button" class="btn btn-warning btn-add-range mt-2"
+                                        <button type="button" class="btn btn-warning btn-add-range"
                                             id="btnAddBatalRusak">
                                             <i class="fas fa-plus"></i> Tambah Nomor Batal/Rusak
                                         </button>
 
-                                        <div class="mt-3">
-                                            <strong>Total Batal/Rusak: <span id="totalBatalRusak"
-                                                    class="badge badge-warning badge-lg">0</span> Notice</strong>
+                                        <div class="alert alert-warning mt-3">
+                                            <strong>Total Batal/Rusak:</strong> <span id="totalBatalRusak">0</span> notice
                                         </div>
                                     </div>
 
@@ -274,52 +282,70 @@
                                         </div>
 
                                         <div class="row">
-                                            <div class="col-md-5">
+                                            <div class="col-md-4">
                                                 <div class="form-group">
                                                     <label for="lokal">Lokal <span class="text-danger">*</span></label>
                                                     <input type="number"
                                                         class="form-control @error('lokal') is-invalid @enderror"
-                                                        id="lokal" name="lokal" value="{{ old('lokal', 0) }}"
+                                                        id="lokal" name="lokal"
+                                                        value="{{ old('lokal', $pengeluaranNotice->buktiKas->lokal ?? 0) }}"
                                                         min="0" required>
                                                     @error('lokal')
                                                         <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror
                                                 </div>
                                             </div>
-                                            <div class="col-md-5">
+                                            <div class="col-md-4">
                                                 <div class="form-group">
                                                     <label for="link">Link <span class="text-danger">*</span></label>
                                                     <input type="number"
                                                         class="form-control @error('link') is-invalid @enderror"
-                                                        id="link" name="link" value="{{ old('link', 0) }}"
+                                                        id="link" name="link"
+                                                        value="{{ old('link', $pengeluaranNotice->buktiKas->link ?? 0) }}"
                                                         min="0" required>
                                                     @error('link')
                                                         <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror
                                                 </div>
                                             </div>
-                                            <div class="col-md-2">
+                                            <div class="col-md-4">
                                                 <div class="form-group">
-                                                    <label>Jumlah</label>
-                                                    <input type="text" class="form-control" id="jumlahBuktiKas"
-                                                        readonly value="0">
+                                                    <label for="jumlahBuktiKas">Jumlah Total</label>
+                                                    <input type="number" class="form-control" id="jumlahBuktiKas"
+                                                        readonly
+                                                        value="{{ ($pengeluaranNotice->buktiKas->lokal ?? 0) + ($pengeluaranNotice->buktiKas->link ?? 0) }}">
                                                 </div>
                                             </div>
+                                        </div>
+
+                                        <div class="alert alert-success">
+                                            <i class="fas fa-info-circle"></i>
+                                            <strong>Catatan:</strong> Total Bukti Kas (Lokal + Link) harus sama dengan
+                                            Jumlah Total
+                                            Pengeluaran (termasuk batal/rusak)
                                         </div>
                                     </div>
 
                                     <!-- SECTION 4: SALDO -->
                                     <div class="section-form">
                                         <div class="section-title">
-                                            <i class="fas fa-coins"></i> SECTION 4: SALDO
+                                            <i class="fas fa-calculator"></i> SECTION 4: SALDO
                                         </div>
+
+                                        @php
+                                            $currentSaldo = \App\Models\SaldoNotice::where(
+                                                'pengeluaran_id',
+                                                $pengeluaranNotice->id,
+                                            )->first();
+                                        @endphp
 
                                         <div class="row">
                                             <div class="col-md-4">
                                                 <div class="form-group">
                                                     <label for="saldo_nomor_awal">Nomor Awal</label>
                                                     <input type="number" class="form-control" id="saldo_nomor_awal"
-                                                        name="saldo_nomor_awal" readonly>
+                                                        name="saldo_nomor_awal" readonly
+                                                        value="{{ $currentSaldo->nomor_awal ?? $pengeluaranNotice->penerimaan->nomor_awal }}">
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
@@ -327,14 +353,15 @@
                                                     <label for="saldo_nomor_akhir">Nomor Akhir</label>
                                                     <input type="number" class="form-control" id="saldo_nomor_akhir"
                                                         name="saldo_nomor_akhir" readonly
-                                                        value="{{ $penerimaanNotice->nomor_akhir }}">
+                                                        value="{{ $pengeluaranNotice->penerimaan->nomor_akhir }}">
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div class="form-group">
                                                     <label for="saldo_jumlah">Jumlah</label>
                                                     <input type="number" class="form-control" id="saldo_jumlah"
-                                                        name="saldo_jumlah" readonly>
+                                                        name="saldo_jumlah" readonly
+                                                        value="{{ $currentSaldo->jumlah ?? 0 }}">
                                                 </div>
                                             </div>
                                         </div>
@@ -343,7 +370,8 @@
                                     <!-- JUMLAH TOTAL -->
                                     <div class="summary-box">
                                         <h4>JUMLAH TOTAL PENGELUARAN</h4>
-                                        <div class="total-value" id="jumlahTotalPengeluaran">0</div>
+                                        <div class="total-value" id="jumlahTotalPengeluaran">
+                                            {{ $pengeluaranNotice->jumlah_total }}</div>
                                         <small>Notice</small>
                                         <div class="mt-2">
                                             <small id="formulaDisplay">(Pemakaian: 0 - Batal/Rusak: 0)</small>
@@ -352,12 +380,11 @@
                                 </div>
 
                                 <div class="card-footer text-right">
-                                    <a href="{{ route('penerimaan-notices.show', $penerimaanNotice->id) }}"
-                                        class="btn btn-secondary">
+                                    <a href="{{ route('admin.pengeluaran-notices.index') }}" class="btn btn-secondary">
                                         <i class="fas fa-times"></i> Batal
                                     </a>
                                     <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save"></i> Simpan Pengeluaran
+                                        <i class="fas fa-save"></i> Update Pengeluaran
                                     </button>
                                 </div>
                             </div>
@@ -371,8 +398,11 @@
 
 @push('scripts')
     <script>
-        let pemakaianIndex = 1;
-        let batalRusakIndex = 0;
+        let pemakaianIndex = {{ count($pengeluaranNotice->pemakaianRanges) }};
+        let batalRusakIndex = {{ count($pengeluaranNotice->batalRusak) }};
+
+        const penerimaanNomorAwal = {{ $pengeluaranNotice->penerimaan->nomor_awal }};
+        const penerimaanNomorAkhir = {{ $pengeluaranNotice->penerimaan->nomor_akhir }};
 
         // Calculate jumlah for pemakaian range
         function calculatePemakaianJumlah(item) {
@@ -404,7 +434,10 @@
             $('#totalPemakaian').text(totalPemakaian);
 
             // Update jumlah-pemakaian input to show adjusted value (after deducting batal/rusak)
-            $('.jumlah-pemakaian').val(totalPemakaian);
+            $('.jumlah-pemakaian').each(function() {
+                const item = $(this).closest('.pemakaian-range-item');
+                calculatePemakaianJumlah(item);
+            });
 
             // Bukti Kas (harus sama dengan raw pemakaian termasuk batal/rusak)
             const lokal = parseInt($('#lokal').val()) || 0;
@@ -425,9 +458,6 @@
             }
 
             // Calculate Saldo
-            const penerimaanNomorAkhir = {{ $penerimaanNotice->nomor_akhir }};
-            const penerimaanNomorAwal = {{ $penerimaanNotice->nomor_awal }};
-
             // Cari nomor terakhir yang digunakan dari range pemakaian
             let nomorTerakhirDigunakan = 0;
             $('.pemakaian-range-item').each(function() {
@@ -461,32 +491,27 @@
                         <div class="col-md-5">
                             <div class="form-group">
                                 <label>Nomor Awal <span class="text-danger">*</span></label>
-                                <input type="number"
-                                       class="form-control nomor-awal"
+                                <input type="number" class="form-control nomor-awal"
                                        name="pemakaian[${pemakaianIndex}][nomor_awal]"
-                                       min="{{ $penerimaanNotice->nomor_awal }}"
-                                       max="{{ $penerimaanNotice->nomor_akhir }}"
+                                       min="${penerimaanNomorAwal}"
+                                       max="${penerimaanNomorAkhir}"
                                        required>
                             </div>
                         </div>
                         <div class="col-md-5">
                             <div class="form-group">
                                 <label>Nomor Akhir <span class="text-danger">*</span></label>
-                                <input type="number"
-                                       class="form-control nomor-akhir"
+                                <input type="number" class="form-control nomor-akhir"
                                        name="pemakaian[${pemakaianIndex}][nomor_akhir]"
-                                       min="{{ $penerimaanNotice->nomor_awal }}"
-                                       max="{{ $penerimaanNotice->nomor_akhir }}"
+                                       min="${penerimaanNomorAwal}"
+                                       max="${penerimaanNomorAkhir}"
                                        required>
                             </div>
                         </div>
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label>Jumlah</label>
-                                <input type="text"
-                                       class="form-control jumlah-pemakaian"
-                                       readonly
-                                       value="0">
+                                <input type="text" class="form-control jumlah-pemakaian" readonly value="0">
                             </div>
                         </div>
                     </div>
@@ -513,12 +538,11 @@
             const html = `
                 <div class="batal-rusak-item" data-index="${batalRusakIndex}">
                     <div style="flex: 1;">
-                        <input type="number"
-                               class="form-control batal-rusak-input"
+                        <input type="number" class="form-control batal-rusak-input"
                                name="batal_rusak[]"
                                placeholder="Nomor Notice"
-                               min="{{ $penerimaanNotice->nomor_awal }}"
-                               max="{{ $penerimaanNotice->nomor_akhir }}"
+                               min="${penerimaanNomorAwal}"
+                               max="${penerimaanNomorAkhir}"
                                required>
                     </div>
                     <button type="button" class="btn btn-sm btn-danger btn-remove-batal">
@@ -563,7 +587,6 @@
             });
 
             const totalBatalRusak = parseInt($('#totalBatalRusak').text()) || 0;
-            const totalPemakaian = totalPemakaianRaw - totalBatalRusak;
             const jumlahBuktiKas = parseInt($('#jumlahBuktiKas').val()) || 0;
 
             if (totalPemakaianRaw === 0) {

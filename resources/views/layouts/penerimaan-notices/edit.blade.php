@@ -12,13 +12,15 @@
         <section class="section">
             <div class="section-header">
                 <div class="section-header-back">
-                    <a href="{{ route('penerimaan-notices.index') }}" class="btn btn-icon"><i
-                            class="fas fa-arrow-left"></i></a>
+                    <a href="{{ Auth::user()->role == 'admin' ? route('admin.penerimaan-notices.index') : route('penerimaan-notices.index') }}"
+                        class="btn btn-icon"><i class="fas fa-arrow-left"></i></a>
                 </div>
                 <h1>Edit Penerimaan Notice</h1>
                 <div class="section-header-breadcrumb">
                     <div class="breadcrumb-item active"><a href="{{ route('home') }}">Dashboard</a></div>
-                    <div class="breadcrumb-item"><a href="{{ route('penerimaan-notices.index') }}">Penerimaan Notice</a>
+                    <div class="breadcrumb-item"><a
+                            href="{{ Auth::user()->role == 'admin' ? route('admin.penerimaan-notices.index') : route('penerimaan-notices.index') }}">Penerimaan
+                            Notice</a>
                     </div>
                     <div class="breadcrumb-item">Edit</div>
                 </div>
@@ -32,7 +34,8 @@
                                 <h4>Form Edit Penerimaan Notice</h4>
                             </div>
                             <div class="card-body">
-                                <form action="{{ route('penerimaan-notices.update', $penerimaanNotice->id) }}"
+                                <form
+                                    action="{{ Auth::user()->role == 'admin' ? route('admin.penerimaan-notices.update', $penerimaanNotice->id) : route('penerimaan-notices.update', $penerimaanNotice->id) }}"
                                     method="POST">
                                     @csrf
                                     @method('PUT')

@@ -268,6 +268,7 @@ class PenerimaanNoticeMonthSheet implements FromCollection, WithTitle, WithStyle
 
     /**
      * Generate data rows
+     * Each penerimaan can have multiple pengeluaran, so we use nested loop
      */
     protected function generateDataRows($sheet)
     {
@@ -277,127 +278,165 @@ class PenerimaanNoticeMonthSheet implements FromCollection, WithTitle, WithStyle
         $penerimaanData = $this->getPenerimaanData();
         $no = 1;
 
-        // Hitung running saldo
-        $saldoBulanLalu = $this->getSaldoBulanLalu();
-        $runningSaldo = $saldoBulanLalu;
-        $runningNomorAkhir = 0;
-
-        // Ambil nomor awal dari saldo bulan lalu jika ada
-        $saldoNomorInfo = $this->getSaldoNomorInfoBulanLalu();
-        if ($saldoNomorInfo) {
-            $runningNomorAkhir = $saldoNomorInfo['nomor_akhir'] ?? 0;
-        }
-
         foreach ($penerimaanData as $penerimaan) {
-            // Kolom A: No urut
-            $sheet->setCellValue('A' . $row, $no);
+            // Get ALL pengeluaran for this penerimaan
+            $pengeluaranList = $this->getPengeluaranForPenerimaan($penerimaan->id);
 
-            // Kolom B: TGL (Tanggal penerimaan)
-            $tanggal = Carbon::parse($penerimaan->tanggal)->format('j/n/Y');
-            $sheet->setCellValue('B' . $row, $tanggal);
+            // If no pengeluaran, show penerimaan with empty pengeluaran columns
+            if (empty($pengeluaranList)) {
+                // Kolom A: No urut
+                $sheet->setCellValue('A' . $row, $no);
 
-            // Kolom C: Nomor penerimaan (format: nomor_awal - nomor_akhir)
-            $nomorPenerimaan = $penerimaan->nomor_awal . ' - ' . $penerimaan->nomor_akhir;
-            $sheet->setCellValue('C' . $row, $nomorPenerimaan);
+                // Kolom B: TGL (Tanggal penerimaan)
+                $tanggal = Carbon::parse($penerimaan->tanggal)->format('j/n/Y');
+                $sheet->setCellValue('B' . $row, $tanggal);
 
-            // Kolom D: Jumlah penerimaan
-            $sheet->setCellValue('D' . $row, $penerimaan->jumlah);
+                // Kolom C: Nomor penerimaan
+                $nomorPenerimaan = $penerimaan->nomor_awal . ' - ' . $penerimaan->nomor_akhir;
+                $sheet->setCellValue('C' . $row, $nomorPenerimaan);
 
-            // Get pengeluaran data
-            $pengeluaran = $this->getPengeluaranForPenerimaan($penerimaan->id);
+                // Kolom D: Jumlah penerimaan
+                $sheet->setCellValue('D' . $row, $penerimaan->jumlah);
 
-            // Kolom E: Tanggal pengeluaran
-            if (!empty($pengeluaran['tanggal'])) {
-                $sheet->setCellValue('E' . $row, $pengeluaran['tanggal']);
-            }
-
-            // Kolom F: Pemakaian NOMOR
-            if (!empty($pengeluaran['pemakaian_nomor'])) {
-                $sheet->setCellValue('F' . $row, $pengeluaran['pemakaian_nomor']);
-            }
-
-            // Kolom G: JUMLAH (pemakaian)
-            if (!empty($pengeluaran['pemakaian_jumlah'])) {
-                $sheet->setCellValue('G' . $row, $pengeluaran['pemakaian_jumlah']);
-            }
-
-            // Kolom H: Batal/Rusak NOMOR
-            if (!empty($pengeluaran['batal_nomor'])) {
-                $sheet->setCellValue('H' . $row, $pengeluaran['batal_nomor']);
-            } else {
+                // Empty pengeluaran columns (E-M)
                 $sheet->setCellValue('H' . $row, '-');
-            }
-
-            // Kolom I: Batal/Rusak JML
-            if (!empty($pengeluaran['batal_jumlah'])) {
-                $sheet->setCellValue('I' . $row, $pengeluaran['batal_jumlah']);
-            }
-
-            // Kolom J: LOKAL
-            // $sheet->setCellValue('J' . $row, '');
-
-            // Kolom K: LINK
-            if (!empty($pengeluaran['bukti_kas_link'])) {
-                $sheet->setCellValue('K' . $row, $pengeluaran['bukti_kas_link']);
-            } else {
                 $sheet->setCellValue('K' . $row, '-');
+                $sheet->setCellValue('M' . $row, 0);
+
+                // Saldo nomor (full penerimaan range since no pengeluaran yet)
+                $saldoNomor = $penerimaan->nomor_awal . ' - ' . $penerimaan->nomor_akhir;
+                $sheet->setCellValue('N' . $row, $saldoNomor);
+
+                // Saldo jumlah (full penerimaan jumlah since no pengeluaran yet)
+                $sheet->setCellValue('O' . $row, $penerimaan->jumlah);
+
+                // Apply row styling
+                $this->applyDataRowStyle($sheet, $row);
+
+                $row++;
+            } else {
+                // Loop through each pengeluaran
+                $pengeluaranIndex = 0;
+                $totalPengeluaranAllRows = 0;
+
+                foreach ($pengeluaranList as $pengeluaran) {
+                    $isFirstPengeluaran = ($pengeluaranIndex === 0);
+
+                    // Kolom A-D: Show penerimaan data ONLY in first row
+                    if ($isFirstPengeluaran) {
+                        $sheet->setCellValue('A' . $row, $no);
+                        $tanggal = Carbon::parse($penerimaan->tanggal)->format('j/n/Y');
+                        $sheet->setCellValue('B' . $row, $tanggal);
+                        $nomorPenerimaan = $penerimaan->nomor_awal . ' - ' . $penerimaan->nomor_akhir;
+                        $sheet->setCellValue('C' . $row, $nomorPenerimaan);
+                        $sheet->setCellValue('D' . $row, $penerimaan->jumlah);
+                    } else {
+                        // Leave columns A-D blank for subsequent pengeluaran rows
+                        $sheet->setCellValue('A' . $row, '');
+                        $sheet->setCellValue('B' . $row, '');
+                        $sheet->setCellValue('C' . $row, '');
+                        $sheet->setCellValue('D' . $row, '');
+                    }
+
+                    // Kolom E: Tanggal pengeluaran
+                    if (!empty($pengeluaran['tanggal'])) {
+                        $sheet->setCellValue('E' . $row, $pengeluaran['tanggal']);
+                    }
+
+                    // Kolom F: Pemakaian NOMOR
+                    if (!empty($pengeluaran['pemakaian_nomor'])) {
+                        $sheet->setCellValue('F' . $row, $pengeluaran['pemakaian_nomor']);
+                    }
+
+                    // Kolom G: JUMLAH (pemakaian)
+                    if (!empty($pengeluaran['pemakaian_jumlah'])) {
+                        $sheet->setCellValue('G' . $row, $pengeluaran['pemakaian_jumlah']);
+                    }
+
+                    // Kolom H: Batal/Rusak NOMOR
+                    $sheet->setCellValue('H' . $row, $pengeluaran['batal_nomor'] ?? '-');
+
+                    // Kolom I: Batal/Rusak JML
+                    if (!empty($pengeluaran['batal_jumlah'])) {
+                        $sheet->setCellValue('I' . $row, $pengeluaran['batal_jumlah']);
+                    }
+
+                    // Kolom J: LOKAL
+                    if (!empty($pengeluaran['bukti_kas_lokal'])) {
+                        $sheet->setCellValue('J' . $row, $pengeluaran['bukti_kas_lokal']);
+                    }
+
+                    // Kolom K: LINK
+                    if (!empty($pengeluaran['bukti_kas_link'])) {
+                        $sheet->setCellValue('K' . $row, $pengeluaran['bukti_kas_link']);
+                    }
+
+                    // Kolom L: Bukti Kas JML
+                    if (!empty($pengeluaran['bukti_kas_jumlah'])) {
+                        $sheet->setCellValue('L' . $row, $pengeluaran['bukti_kas_jumlah']);
+                    }
+
+                    // Hitung total pengeluaran untuk row ini
+                    $totalPengeluaran = ($pengeluaran['pemakaian_jumlah'] ?? 0) +
+                        ($pengeluaran['batal_jumlah'] ?? 0) +
+                        ($pengeluaran['bukti_kas_jumlah'] ?? 0);
+
+                    // Kolom M: JML TOTAL
+                    $sheet->setCellValue('M' . $row, $totalPengeluaran);
+
+                    // Track total pengeluaran across all rows
+                    $totalPengeluaranAllRows += $totalPengeluaran;
+
+                    // Kolom N: SALDO NOMOR (from database)
+                    if (!empty($pengeluaran['saldo_nomor'])) {
+                        $sheet->setCellValue('N' . $row, $pengeluaran['saldo_nomor']);
+                    }
+
+                    // Kolom O: SALDO JML (from database)
+                    if (!empty($pengeluaran['saldo_jumlah'])) {
+                        $sheet->setCellValue('O' . $row, $pengeluaran['saldo_jumlah']);
+                    }
+
+                    // Apply row styling
+                    $this->applyDataRowStyle($sheet, $row);
+
+                    $row++;
+                    $pengeluaranIndex++;
+                }
             }
 
-            // Kolom L: Bukti Kas JML
-            if (!empty($pengeluaran['bukti_kas_jumlah'])) {
-                $sheet->setCellValue('L' . $row, $pengeluaran['bukti_kas_jumlah']);
-            }
-
-            // Hitung total pengeluaran
-            $totalPengeluaran = ($pengeluaran['pemakaian_jumlah'] ?? 0) +
-                ($pengeluaran['batal_jumlah'] ?? 0) +
-                ($pengeluaran['bukti_kas_jumlah'] ?? 0);
-
-            // Kolom M: JML TOTAL (total pengeluaran)
-            $sheet->setCellValue('M' . $row, $totalPengeluaran);
-
-            // Hitung saldo
-            $runningSaldo = $runningSaldo + $penerimaan->jumlah - $totalPengeluaran;
-
-            // Hitung nomor saldo (nomor_akhir_penerimaan dikurangi pengeluaran)
-            $saldoNomorAwal = $penerimaan->nomor_awal + $totalPengeluaran;
-            $saldoNomorAkhir = $penerimaan->nomor_akhir;
-
-            // Kolom N: SALDO NOMOR (format range)
-            $saldoNomor = $saldoNomorAwal . ' - ' . $saldoNomorAkhir;
-            $sheet->setCellValue('N' . $row, $saldoNomor);
-
-            // Kolom O: SALDO JML
-            $sheet->setCellValue('O' . $row, $runningSaldo);
-
-            // Style untuk data row
-            $sheet->getStyle('A' . $row . ':O' . $row)->applyFromArray([
-                'font' => ['size' => 9],
-                'alignment' => [
-                    'horizontal' => Alignment::HORIZONTAL_CENTER,
-                    'vertical' => Alignment::VERTICAL_CENTER,
-                ],
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => Border::BORDER_THIN,
-                    ],
-                ],
-            ]);
-
-            // Right align untuk angka
-            $sheet->getStyle('D' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->getStyle('G' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->getStyle('I' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->getStyle('L' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->getStyle('M' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->getStyle('O' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-
-            $row++;
             $no++;
         }
 
         $this->currentRow = $row;
         $this->lastDataRow = $row - 1;
+    }
+
+    /**
+     * Apply consistent styling to data rows
+     */
+    protected function applyDataRowStyle($sheet, $row)
+    {
+        $sheet->getStyle('A' . $row . ':O' . $row)->applyFromArray([
+            'font' => ['size' => 9],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                ],
+            ],
+        ]);
+
+        // Right align for numbers
+        $sheet->getStyle('D' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('G' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('I' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('L' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('M' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheet->getStyle('O' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
     }
 
     /**
@@ -735,37 +774,79 @@ class PenerimaanNoticeMonthSheet implements FromCollection, WithTitle, WithStyle
 
     /**
      * Get pengeluaran untuk penerimaan tertentu
+     * Returns array of ALL pengeluaran transactions with aggregated data
      */
     protected function getPengeluaranForPenerimaan($penerimaanId)
     {
-        $pengeluaran = \App\Models\PengeluaranNotice::where('penerimaan_id', $penerimaanId)->first();
+        // Get ALL pengeluaran for this penerimaan
+        $pengeluaranRecords = \App\Models\PengeluaranNotice::where('penerimaan_id', $penerimaanId)
+            ->orderBy('tanggal', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->get();
 
-        if (!$pengeluaran) {
+        if ($pengeluaranRecords->isEmpty()) {
             return [];
         }
 
         $result = [];
 
-        // Pemakaian range
-        $pemakaianRange = \App\Models\PengeluaranPemakaianRange::where('pengeluaran_id', $pengeluaran->id)->first();
-        if ($pemakaianRange) {
-            $result['tanggal'] = Carbon::parse($pemakaianRange->tanggal ?? $pemakaianRange->created_at)->format('j/n/Y');
-            $result['pemakaian_nomor'] = $pemakaianRange->nomor_awal . '-' . $pemakaianRange->nomor_akhir;
-            $result['pemakaian_jumlah'] = $pemakaianRange->jumlah;
-        }
+        foreach ($pengeluaranRecords as $pengeluaran) {
+            $pengeluaranData = [];
 
-        // Batal/Rusak
-        $batalRusak = \App\Models\PengeluaranBatalRusak::where('pengeluaran_id', $pengeluaran->id)->first();
-        if ($batalRusak) {
-            $result['batal_nomor'] = $batalRusak->nomor ?? '-';
-            $result['batal_jumlah'] = $batalRusak->jumlah ?? 0;
-        }
+            // Date from pengeluaran
+            $pengeluaranData['tanggal'] = Carbon::parse($pengeluaran->tanggal)->format('j/n/Y');
 
-        // Bukti Kas
-        $buktiKas = \App\Models\PengeluaranBuktiKas::where('pengeluaran_id', $pengeluaran->id)->first();
-        if ($buktiKas) {
-            $result['bukti_kas_link'] = $buktiKas->link ?? '-';
-            $result['bukti_kas_jumlah'] = $buktiKas->jumlah ?? 0;
+            // Aggregate ALL pemakaian ranges for this pengeluaran
+            $pemakaianRanges = \App\Models\PengeluaranPemakaianRange::where('pengeluaran_id', $pengeluaran->id)
+                ->orderBy('nomor_awal', 'asc')
+                ->get();
+
+            if ($pemakaianRanges->isNotEmpty()) {
+                $minNomor = $pemakaianRanges->min('nomor_awal');
+                $maxNomor = $pemakaianRanges->max('nomor_akhir');
+                $totalJumlah = $pemakaianRanges->sum('jumlah');
+
+                $pengeluaranData['pemakaian_nomor'] = $minNomor . '-' . $maxNomor;
+                $pengeluaranData['pemakaian_jumlah'] = $totalJumlah;
+            } else {
+                $pengeluaranData['pemakaian_nomor'] = '';
+                $pengeluaranData['pemakaian_jumlah'] = 0;
+            }
+
+            // Aggregate ALL batal/rusak for this pengeluaran
+            $batalRusakRecords = \App\Models\PengeluaranBatalRusak::where('pengeluaran_id', $pengeluaran->id)->get();
+            if ($batalRusakRecords->isNotEmpty()) {
+                $nomorList = $batalRusakRecords->pluck('nomor_notice')->filter()->toArray();
+                $pengeluaranData['batal_nomor'] = !empty($nomorList) ? implode(', ', $nomorList) : '-';
+                $pengeluaranData['batal_jumlah'] = $batalRusakRecords->count();
+            } else {
+                $pengeluaranData['batal_nomor'] = '-';
+                $pengeluaranData['batal_jumlah'] = 0;
+            }
+
+            // Aggregate ALL bukti kas for this pengeluaran
+            $buktiKasRecords = \App\Models\PengeluaranBuktiKas::where('pengeluaran_id', $pengeluaran->id)->get();
+            if ($buktiKasRecords->isNotEmpty()) {
+                $pengeluaranData['bukti_kas_lokal'] = $buktiKasRecords->sum('lokal');
+                $pengeluaranData['bukti_kas_link'] = $buktiKasRecords->sum('link');
+                $pengeluaranData['bukti_kas_jumlah'] = $buktiKasRecords->sum('jumlah');
+            } else {
+                $pengeluaranData['bukti_kas_lokal'] = 0;
+                $pengeluaranData['bukti_kas_link'] = 0;
+                $pengeluaranData['bukti_kas_jumlah'] = 0;
+            }
+
+            // Get saldo from database (already saved)
+            $saldo = \App\Models\SaldoNotice::where('pengeluaran_id', $pengeluaran->id)->first();
+            if ($saldo) {
+                $pengeluaranData['saldo_nomor'] = $saldo->nomor_awal . ' - ' . $saldo->nomor_akhir;
+                $pengeluaranData['saldo_jumlah'] = $saldo->jumlah;
+            } else {
+                $pengeluaranData['saldo_nomor'] = '-';
+                $pengeluaranData['saldo_jumlah'] = 0;
+            }
+
+            $result[] = $pengeluaranData;
         }
 
         return $result;
@@ -819,10 +900,57 @@ class PenerimaanNoticeMonthSheet implements FromCollection, WithTitle, WithStyle
             ->where('tanggal', '<=', $lastDayPrevMonth)
             ->sum('jumlah');
 
-        // TODO: Hitung pengeluaran dari data actual
-        $pengeluaranPemakaian = 0;
-        $pengeluaranBatal = 0;
-        $pengeluaranTotal = 0;
+        // Calculate pengeluaran totals for bulan ini
+        $penerimaanBulanIniIds = PenerimaanNotice::query()
+            ->when($this->role === 'kasir', function ($q) {
+                $q->where('created_by', $this->userId);
+            })
+            ->when($this->role === 'admin' && $this->layananId, function ($q) {
+                $q->whereHas('lokasi', function ($q2) {
+                    $q2->where('layanan_id', $this->layananId);
+                });
+            })
+            ->when($this->kasirId, function ($q) {
+                $q->where('created_by', $this->kasirId);
+            })
+            ->whereYear('tanggal', $this->year)
+            ->whereMonth('tanggal', $this->month)
+            ->pluck('id');
+
+        $pengeluaranBulanIniIds = \App\Models\PengeluaranNotice::whereIn('penerimaan_id', $penerimaanBulanIniIds)->pluck('id');
+
+        $pengeluaranPemakaian = \App\Models\PengeluaranPemakaianRange::whereIn('pengeluaran_id', $pengeluaranBulanIniIds)->sum('jumlah');
+        $pengeluaranBatal = \App\Models\PengeluaranBatalRusak::whereIn('pengeluaran_id', $pengeluaranBulanIniIds)->count();
+        $pengeluaranBuktiKas = \App\Models\PengeluaranBuktiKas::whereIn('pengeluaran_id', $pengeluaranBulanIniIds)->sum('jumlah');
+        $pengeluaranTotal = $pengeluaranPemakaian + $pengeluaranBatal + $pengeluaranBuktiKas;
+
+        // Calculate pengeluaran totals s/d bulan lalu
+        $penerimaanSdBulanLaluIds = PenerimaanNotice::query()
+            ->when($this->role === 'kasir', function ($q) {
+                $q->where('created_by', $this->userId);
+            })
+            ->when($this->role === 'admin' && $this->layananId, function ($q) {
+                $q->whereHas('lokasi', function ($q2) {
+                    $q2->where('layanan_id', $this->layananId);
+                });
+            })
+            ->when($this->kasirId, function ($q) {
+                $q->where('created_by', $this->kasirId);
+            })
+            ->where('tanggal', '<=', $lastDayPrevMonth)
+            ->pluck('id');
+
+        $pengeluaranSdBulanLaluIds = \App\Models\PengeluaranNotice::whereIn('penerimaan_id', $penerimaanSdBulanLaluIds)->pluck('id');
+
+        $pengeluaranPemakaianSdBulanLalu = \App\Models\PengeluaranPemakaianRange::whereIn('pengeluaran_id', $pengeluaranSdBulanLaluIds)->sum('jumlah');
+        $pengeluaranBatalSdBulanLalu = \App\Models\PengeluaranBatalRusak::whereIn('pengeluaran_id', $pengeluaranSdBulanLaluIds)->count();
+        $pengeluaranBuktiKasSdBulanLalu = \App\Models\PengeluaranBuktiKas::whereIn('pengeluaran_id', $pengeluaranSdBulanLaluIds)->sum('jumlah');
+        $totalSdBulanLalu = $pengeluaranPemakaianSdBulanLalu + $pengeluaranBatalSdBulanLalu + $pengeluaranBuktiKasSdBulanLalu;
+
+        // Calculate s/d bulan ini (cumulative)
+        $pengeluaranPemakaianSdBulanIni = $pengeluaranPemakaianSdBulanLalu + $pengeluaranPemakaian;
+        $pengeluaranBatalSdBulanIni = $pengeluaranBatalSdBulanLalu + $pengeluaranBatal;
+        $totalSdBulanIni = $totalSdBulanLalu + $pengeluaranTotal;
 
         return [
             'penerimaan_bulan_ini' => $penerimaanBulanIni,
@@ -831,12 +959,12 @@ class PenerimaanNoticeMonthSheet implements FromCollection, WithTitle, WithStyle
             'pengeluaran_pemakaian' => $pengeluaranPemakaian,
             'pengeluaran_batal' => $pengeluaranBatal,
             'pengeluaran_total' => $pengeluaranTotal,
-            'pengeluaran_sd_bulan_lalu' => 0,
-            'batal_sd_bulan_lalu' => 0,
-            'total_sd_bulan_lalu' => 0,
-            'pengeluaran_sd_bulan_ini' => 0,
-            'batal_sd_bulan_ini' => 0,
-            'total_sd_bulan_ini' => 0,
+            'pengeluaran_sd_bulan_lalu' => $pengeluaranPemakaianSdBulanLalu,
+            'batal_sd_bulan_lalu' => $pengeluaranBatalSdBulanLalu,
+            'total_sd_bulan_lalu' => $totalSdBulanLalu,
+            'pengeluaran_sd_bulan_ini' => $pengeluaranPemakaianSdBulanIni,
+            'batal_sd_bulan_ini' => $pengeluaranBatalSdBulanIni,
+            'total_sd_bulan_ini' => $totalSdBulanIni,
         ];
     }
 }

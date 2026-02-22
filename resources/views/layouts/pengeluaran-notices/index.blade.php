@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Penerimaan Notice')
+@section('title', 'Pengeluaran Notice')
 
 @push('style')
     <!-- CSS Libraries -->
@@ -11,10 +11,10 @@
     <div class="main-content">
         <section class="section">
             <div class="section-header">
-                <h1>Penerimaan Notice</h1>
+                <h1>Pengeluaran Notice</h1>
                 <div class="section-header-breadcrumb">
                     <div class="breadcrumb-item active"><a href="{{ route('home') }}">Dashboard</a></div>
-                    <div class="breadcrumb-item">Penerimaan Notice</div>
+                    <div class="breadcrumb-item">Pengeluaran Notice</div>
                 </div>
             </div>
 
@@ -45,41 +45,16 @@
                     <div class="col-12">
                         <div class="card" style="opacity: 0.93">
                             <div class="card-header">
-                                <h4>Daftar Penerimaan Notice</h4>
-                                <div class="card-header-action">
-                                    @if (!$isReadOnly)
-                                        @if (Auth::user()->role == 'kasir' && !$canAddPenerimaan)
-                                            <button type="button" class="btn btn-primary" disabled data-toggle="tooltip"
-                                                title="Saldo penerimaan sebelumnya masih tersisa {{ $latestPenerimaanSaldo }} notice">
-                                                <i class="fas fa-plus"></i> Tambah Penerimaan
-                                            </button>
-                                        @else
-                                            <a href="{{ route('penerimaan-notices.create') }}" class="btn btn-primary">
-                                                <i class="fas fa-plus"></i> Tambah Penerimaan
-                                            </a>
-                                        @endif
-                                    @endif
-                                </div>
+                                <h4>Daftar Pengeluaran Notice</h4>
                             </div>
                             <div class="card-body">
-                                @if (Auth::user()->role == 'kasir' && !$canAddPenerimaan)
-                                    <div class="alert alert-warning alert-has-icon mb-3">
-                                        <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
-                                        <div class="alert-body">
-                                            <div class="alert-title">Perhatian!</div>
-                                            Anda tidak dapat menambah penerimaan baru karena <strong>saldo penerimaan
-                                                sebelumnya masih tersisa {{ $latestPenerimaanSaldo }} notice</strong>.
-                                            Silakan lakukan pengeluaran terlebih dahulu hingga saldo menjadi 0.
-                                        </div>
-                                    </div>
-                                @endif
                                 <div class="row mb-3">
                                     <div class="col-md-12">
                                         <form
-                                            action="{{ $isReadOnly ? route('admin.penerimaan-notices.index') : route('penerimaan-notices.index') }}"
+                                            action="{{ Auth::user()->role == 'admin' ? route('admin.pengeluaran-notices.index') : route('pengeluaran-notices.index') }}"
                                             method="GET">
                                             <div class="row">
-                                                @if ($isReadOnly)
+                                                @if (Auth::user()->role == 'admin')
                                                     <div class="col-md-3">
                                                         <div class="form-group">
                                                             <label>Kasir</label>
@@ -95,7 +70,7 @@
                                                         </div>
                                                     </div>
                                                 @endif
-                                                <div class="col-md-3">
+                                                <div class="{{ Auth::user()->role == 'admin' ? 'col-md-3' : 'col-md-3' }}">
                                                     <div class="form-group">
                                                         <label>Lokasi</label>
                                                         <select name="lokasi_id" class="form-control">
@@ -109,26 +84,18 @@
                                                         </select>
                                                     </div>
                                                 </div>
-                                                <div class="{{ $isReadOnly ? 'col-md-2' : 'col-md-2' }}">
+                                                <div class="{{ Auth::user()->role == 'admin' ? 'col-md-2' : 'col-md-3' }}">
                                                     <div class="form-group">
                                                         <label>Tanggal Dari</label>
                                                         <input type="date" name="tanggal_dari" class="form-control"
                                                             value="{{ request('tanggal_dari') }}">
                                                     </div>
                                                 </div>
-                                                <div class="{{ $isReadOnly ? 'col-md-2' : 'col-md-2' }}">
+                                                <div class="{{ Auth::user()->role == 'admin' ? 'col-md-2' : 'col-md-3' }}">
                                                     <div class="form-group">
                                                         <label>Tanggal Sampai</label>
                                                         <input type="date" name="tanggal_sampai" class="form-control"
                                                             value="{{ request('tanggal_sampai') }}">
-                                                    </div>
-                                                </div>
-                                                <div class="{{ $isReadOnly ? 'col-md-2' : 'col-md-3' }}">
-                                                    <div class="form-group">
-                                                        <label>Cari</label>
-                                                        <input type="text" name="search" class="form-control"
-                                                            placeholder="Cari nomor atau layanan..."
-                                                            value="{{ request('search') }}">
                                                     </div>
                                                 </div>
                                                 <div class="col-md-2">
@@ -136,15 +103,6 @@
                                                         <label>&nbsp;</label>
                                                         <button class="btn btn-primary btn-block" type="submit">
                                                             <i class="fas fa-search"></i> Filter
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <div class="form-group">
-                                                        <label>&nbsp;</label>
-                                                        <button class="btn btn-success btn-block" type="button"
-                                                            onclick="exportExcel()">
-                                                            <i class="fas fa-file-excel"></i> Export Excel
                                                         </button>
                                                     </div>
                                                 </div>
@@ -159,49 +117,54 @@
                                             <tr>
                                                 <th style="width: 50px">No</th>
                                                 <th>Tanggal</th>
-                                                <th>Nomor Awal</th>
-                                                <th>Nomor Akhir</th>
-                                                <th>Jumlah</th>
-                                                <th>Layanan</th>
+                                                <th>Penerimaan</th>
+                                                <th>Jumlah Total</th>
+                                                <th>Lokasi</th>
                                                 <th>Dibuat Oleh</th>
                                                 <th style="width: 200px">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @forelse ($penerimaans as $index => $penerimaan)
+                                            @forelse ($pengeluaranNotices as $index => $pengeluaran)
                                                 <tr>
-                                                    <td>{{ $penerimaans->firstItem() + $index }}</td>
-                                                    <td>{{ $penerimaan->tanggal->format('d/m/Y') }}</td>
-                                                    <td>{{ number_format($penerimaan->nomor_awal, 0, ',', '.') }}</td>
-                                                    <td>{{ number_format($penerimaan->nomor_akhir, 0, ',', '.') }}</td>
+                                                    <td>{{ $pengeluaranNotices->firstItem() + $index }}</td>
+                                                    <td>{{ $pengeluaran->tanggal->format('d/m/Y') }}</td>
                                                     <td>
-                                                        <span
-                                                            class="badge badge-primary">{{ number_format($penerimaan->jumlah, 0, ',', '.') }}</span>
+                                                        @if ($pengeluaran->penerimaan)
+                                                            {{ number_format($pengeluaran->penerimaan->nomor_awal, 0, ',', '.') }}
+                                                            -
+                                                            {{ number_format($pengeluaran->penerimaan->nomor_akhir, 0, ',', '.') }}
+                                                        @else
+                                                            -
+                                                        @endif
                                                     </td>
                                                     <td>
-                                                        @if ($penerimaan->lokasi)
+                                                        <span
+                                                            class="badge badge-primary">{{ number_format($pengeluaran->jumlah_total, 0, ',', '.') }}</span>
+                                                    </td>
+                                                    <td>
+                                                        @if ($pengeluaran->lokasi)
                                                             <span
-                                                                class="badge badge-info">{{ $penerimaan->lokasi->layanan->nama }}
-                                                            </span>
+                                                                class="badge badge-info">{{ $pengeluaran->lokasi->nama }}</span>
                                                         @else
                                                             <span class="badge badge-secondary">-</span>
                                                         @endif
                                                     </td>
-                                                    <td>{{ $penerimaan->creator->name ?? '-' }}</td>
+                                                    <td>{{ $pengeluaran->creator->name ?? '-' }}</td>
                                                     <td>
-                                                        <a href="{{ $isReadOnly ? route('admin.penerimaan-notices.show', $penerimaan->id) : route('penerimaan-notices.show', $penerimaan->id) }}"
-                                                            class="btn btn-sm btn-info" title="Detail">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
-                                                        @if ($isReadOnly && Auth::user()->role == 'admin')
-                                                            <a href="{{ route('admin.penerimaan-notices.edit', $penerimaan->id) }}"
+                                                        @if (Auth::user()->role == 'admin')
+                                                            <a href="{{ route('admin.pengeluaran-notices.show', $pengeluaran->id) }}"
+                                                                class="btn btn-sm btn-info" title="Detail">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                            <a href="{{ route('admin.pengeluaran-notices.edit', $pengeluaran->id) }}"
                                                                 class="btn btn-sm btn-warning" title="Edit">
                                                                 <i class="fas fa-edit"></i>
                                                             </a>
                                                             <form
-                                                                action="{{ route('admin.penerimaan-notices.destroy', $penerimaan->id) }}"
+                                                                action="{{ route('admin.pengeluaran-notices.destroy', $pengeluaran->id) }}"
                                                                 method="POST" class="d-inline"
-                                                                onsubmit="return confirm('Yakin ingin menghapus penerimaan ini? Data pengeluaran terkait akan ikut terhapus.')">
+                                                                onsubmit="return confirm('Yakin ingin menghapus pengeluaran ini?')">
                                                                 @csrf
                                                                 @method('DELETE')
                                                                 <button type="submit" class="btn btn-sm btn-danger"
@@ -214,26 +177,15 @@
                                                 </tr>
                                             @empty
                                                 <tr>
-                                                    <td colspan="8" class="text-center">
+                                                    <td colspan="7" class="text-center">
                                                         <div class="empty-state" style="padding: 40px 0;">
                                                             <div class="empty-state-icon bg-primary">
                                                                 <i class="fas fa-file-invoice"></i>
                                                             </div>
-                                                            <h2>Belum Ada Data Penerimaan</h2>
+                                                            <h2>Belum Ada Data Pengeluaran</h2>
                                                             <p class="lead">
-                                                                @if ($isReadOnly)
-                                                                    Belum ada data penerimaan notice dari kasir.
-                                                                @else
-                                                                    Anda belum memiliki data penerimaan notice. Silakan
-                                                                    tambahkan penerimaan baru.
-                                                                @endif
+                                                                Belum ada data pengeluaran notice.
                                                             </p>
-                                                            @if (!$isReadOnly)
-                                                                <a href="{{ route('penerimaan-notices.create') }}"
-                                                                    class="btn btn-primary mt-3">
-                                                                    <i class="fas fa-plus"></i> Tambah Penerimaan
-                                                                </a>
-                                                            @endif
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -242,9 +194,9 @@
                                     </table>
                                 </div>
 
-                                @if ($penerimaans->hasPages())
+                                @if ($pengeluaranNotices->hasPages())
                                     <div class="mt-3">
-                                        {{ $penerimaans->links() }}
+                                        {{ $pengeluaranNotices->links() }}
                                     </div>
                                 @endif
                             </div>
@@ -259,39 +211,4 @@
 @push('scripts')
     <!-- JS Libraies -->
     <script src="{{ asset('library/selectric/public/jquery.selectric.min.js') }}"></script>
-
-    <!-- Page Specific JS File -->
-    <script src="{{ asset('js/page/features-posts.js') }}"></script>
-
-    <script>
-        function exportExcel() {
-            // Ambil parameter filter dari form
-            @if ($isReadOnly)
-                const kasirId = document.querySelector('select[name="kasir_id"]').value;
-            @endif
-            const tanggalDari = document.querySelector('input[name="tanggal_dari"]').value;
-            const tanggalSampai = document.querySelector('input[name="tanggal_sampai"]').value;
-
-            // Build URL dengan query string
-            @if ($isReadOnly)
-                let exportUrl = "{{ route('admin.penerimaan-notices.export') }}";
-            @else
-                let exportUrl = "{{ route('penerimaan-notices.export') }}";
-            @endif
-
-            const params = new URLSearchParams();
-            @if ($isReadOnly)
-                if (kasirId) params.append('kasir_id', kasirId);
-            @endif
-            if (tanggalDari) params.append('tanggal_dari', tanggalDari);
-            if (tanggalSampai) params.append('tanggal_sampai', tanggalSampai);
-
-            if (params.toString()) {
-                exportUrl += '?' + params.toString();
-            }
-
-            // Redirect ke URL export
-            window.location.href = exportUrl;
-        }
-    </script>
 @endpush

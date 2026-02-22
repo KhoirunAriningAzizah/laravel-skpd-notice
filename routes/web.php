@@ -32,19 +32,30 @@ Route::middleware(['auth'])->group(function () {
     // Kasir Users Management (Only Admin)
     Route::middleware('admin')->group(function () {
         Route::resource('kasir-users', App\Http\Controllers\KasirController::class);
-        // Penerimaan Notices - Read Only for Admin
+        // Penerimaan & Pengeluaran Notices - Full Management for Admin
         Route::prefix('admin')->group(function () {
+            // Penerimaan Notices
             Route::get('penerimaan-notices', [App\Http\Controllers\PenerimaanNoticeController::class, 'index'])->name('admin.penerimaan-notices.index');
             Route::get('penerimaan-notices/{penerimaan_notice}', [App\Http\Controllers\PenerimaanNoticeController::class, 'show'])->name('admin.penerimaan-notices.show');
+            Route::get('penerimaan-notices/{penerimaan_notice}/edit', [App\Http\Controllers\PenerimaanNoticeController::class, 'edit'])->name('admin.penerimaan-notices.edit');
+            Route::put('penerimaan-notices/{penerimaan_notice}', [App\Http\Controllers\PenerimaanNoticeController::class, 'update'])->name('admin.penerimaan-notices.update');
+            Route::delete('penerimaan-notices/{penerimaan_notice}', [App\Http\Controllers\PenerimaanNoticeController::class, 'destroy'])->name('admin.penerimaan-notices.destroy');
             Route::get('penerimaan-notices-export', [App\Http\Controllers\PenerimaanNoticeController::class, 'exportAdmin'])->name('admin.penerimaan-notices.export');
+
+            // Pengeluaran Notices
+            Route::get('pengeluaran-notices', [App\Http\Controllers\PengeluaranNoticeController::class, 'index'])->name('admin.pengeluaran-notices.index');
+            Route::get('pengeluaran-notices/{pengeluaran_notice}', [App\Http\Controllers\PengeluaranNoticeController::class, 'show'])->name('admin.pengeluaran-notices.show');
+            Route::get('pengeluaran-notices/{pengeluaran_notice}/edit', [App\Http\Controllers\PengeluaranNoticeController::class, 'edit'])->name('admin.pengeluaran-notices.edit');
+            Route::put('pengeluaran-notices/{pengeluaran_notice}', [App\Http\Controllers\PengeluaranNoticeController::class, 'update'])->name('admin.pengeluaran-notices.update');
+            Route::delete('pengeluaran-notices/{pengeluaran_notice}', [App\Http\Controllers\PengeluaranNoticeController::class, 'destroy'])->name('admin.pengeluaran-notices.destroy');
         });
     });
 
-    // Penerimaan Notices Management (Only Kasir)
+    // Penerimaan & Pengeluaran Notices Management (Only Kasir - View & Create Only)
     Route::middleware('kasir')->group(function () {
         Route::get('penerimaan-notices/export', [App\Http\Controllers\PenerimaanNoticeController::class, 'export'])->name('penerimaan-notices.export');
-        Route::resource('penerimaan-notices', App\Http\Controllers\PenerimaanNoticeController::class)->except(['destroy']);
-        Route::resource('pengeluaran-notices', App\Http\Controllers\PengeluaranNoticeController::class)->except(['destroy', 'show', 'edit', 'update']);
+        Route::resource('penerimaan-notices', App\Http\Controllers\PenerimaanNoticeController::class)->only(['index', 'show', 'create', 'store']);
+        Route::resource('pengeluaran-notices', App\Http\Controllers\PengeluaranNoticeController::class)->only(['index', 'create', 'store']);
     });
 
     Route::get('/table-example', [App\Http\Controllers\ExampleController::class, 'table'])->name('table.example');

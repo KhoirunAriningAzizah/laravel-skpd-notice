@@ -15,7 +15,15 @@ class KasirController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::where('role', 'kasir');
+        $adminLayanan = auth()->user()->layanan;
+
+        $query = User::where('role', 'kasir')->where(function ($q) use ($adminLayanan) {
+            if ($adminLayanan) {
+                $q->where('layanan_id', $adminLayanan->id);
+            }
+        });
+
+        // dd($adminLayanan);
 
         // Search functionality
         if ($request->has('search') && $request->search != '') {

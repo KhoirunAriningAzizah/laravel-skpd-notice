@@ -66,7 +66,7 @@ class HomeController extends Controller
             $data['sisaSaldoNotice'] = SaldoNotice::whereHas('penerimaan.lokasi', function ($query) use ($user) {
                 $query->where('layanan_id', $user->layanan_id);
             })
-                ->sum('jumlah');
+                ->latest()->value('jumlah');
         } elseif ($user->role === 'kasir') {
             // Dashboard Kasir (sama seperti admin + nomor saldo)
             $layanan = $user->layanan;
@@ -93,7 +93,9 @@ class HomeController extends Controller
             $data['sisaSaldoNotice'] = SaldoNotice::whereHas('penerimaan.lokasi', function ($query) use ($user) {
                 $query->where('layanan_id', $user->layanan_id);
             })
-                ->sum('jumlah');
+                ->latest()->value('jumlah');
+
+            // dd($data['sisaSaldoNotice']);
 
             // Nomor saldo awal dan akhir
             $saldoAwal = SaldoNotice::whereHas('penerimaan.lokasi', function ($query) use ($user) {

@@ -32,29 +32,34 @@
                             <div class="card-header">
                                 <h4>Informasi Penerimaan Notice</h4>
                                 <div class="card-header-action">
-                                    @if (!$isReadOnly)
-                                        @if (Auth::user()->role == 'kasir')
-                                            @if (!$canAddPengeluaran)
-                                                <button type="button" class="btn btn-success mr-2" disabled
-                                                    data-toggle="tooltip"
-                                                    title="{{ $pengeluaranBlockReason == 'saldo_habis' ? 'Saldo sudah habis (0)' : 'Sudah mencapai batas 2 pengeluaran per hari' }}">
-                                                    <i class="fas fa-plus"></i> Tambahkan Pengeluaran
-                                                </button>
-                                            @else
-                                                <a href="{{ route('pengeluaran-notices.create', ['penerimaan_id' => $penerimaanNotice->id]) }}"
-                                                    class="btn btn-success mr-2">
-                                                    <i class="fas fa-plus"></i> Tambahkan Pengeluaran
-                                                </a>
-                                            @endif
+                                    @if (Auth::user()->role == 'kasir')
+                                        @if (!$canAddPengeluaran)
+                                            <button type="button" class="btn btn-success mr-2" disabled
+                                                data-toggle="tooltip"
+                                                title="{{ $pengeluaranBlockReason == 'saldo_habis' ? 'Saldo sudah habis (0)' : 'Sudah mencapai batas 2 pengeluaran per hari' }}">
+                                                <i class="fas fa-plus"></i> Tambahkan Pengeluaran
+                                            </button>
+                                        @else
+                                            <a href="{{ route('pengeluaran-notices.create', ['penerimaan_id' => $penerimaanNotice->id]) }}"
+                                                class="btn btn-success mr-2">
+                                                <i class="fas fa-plus"></i> Tambahkan Pengeluaran
+                                            </a>
                                         @endif
-                                        <a href="{{ route('penerimaan-notices.edit', $penerimaanNotice->id) }}"
-                                            class="btn btn-warning">
+                                    @elseif(Auth::user()->role == 'admin')
+                                        <a href="{{ route('admin.penerimaan-notices.edit', $penerimaanNotice->id) }}"
+                                            class="btn btn-warning mr-2">
                                             <i class="fas fa-edit"></i> Edit
                                         </a>
-                                    @else
-                                        <span class="badge badge-info badge-lg">
-                                            <i class="fas fa-eye"></i> Mode Tampilan (Read-Only)
-                                        </span>
+                                        <form
+                                            action="{{ route('admin.penerimaan-notices.destroy', $penerimaanNotice->id) }}"
+                                            method="POST" class="d-inline"
+                                            onsubmit="return confirm('Yakin ingin menghapus penerimaan ini? Data pengeluaran terkait akan ikut terhapus.')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="fas fa-trash"></i> Hapus
+                                            </button>
+                                        </form>
                                     @endif
                                 </div>
                             </div>

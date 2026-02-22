@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Exports\PenerimaanNoticeExport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Log;
 
 class PenerimaanNoticeController extends Controller
 {
@@ -155,6 +156,26 @@ class PenerimaanNoticeController extends Controller
         // Calculate jumlah
         $jumlah = $request->nomor_akhir - $request->nomor_awal + 1;
 
+        // Check for duplicate range across all kasirs
+        $existingPenerimaan = PenerimaanNotice::where(function ($query) use ($request) {
+            $query->where('nomor_awal', '<=', $request->nomor_akhir)
+                ->where('nomor_akhir', '>=', $request->nomor_awal);
+        })->first();
+
+        if ($existingPenerimaan) {
+            Log::info('Duplicate penerimaan range detected', [
+                'input_range' => $request->nomor_awal . '-' . $request->nomor_akhir,
+                'existing_range' => $existingPenerimaan->nomor_awal . '-' . $existingPenerimaan->nomor_akhir,
+                'existing_by' => $existingPenerimaan->creator->name ?? 'Unknown'
+            ]);
+            return back()->withInput()->with(
+                'error',
+                'Nomor notice ' . $existingPenerimaan->nomor_awal . '-' . $existingPenerimaan->nomor_akhir .
+                    ' sudah digunakan oleh ' . ($existingPenerimaan->creator->name ?? 'kasir lain') . '. ' .
+                    'Silakan gunakan nomor yang berbeda.'
+            );
+        }
+
         PenerimaanNotice::create([
             'tanggal' => $request->tanggal,
             'nomor_awal' => $request->nomor_awal,
@@ -182,8 +203,8 @@ class PenerimaanNoticeController extends Controller
                 abort(403, 'Unauthorized action.');
             }
         } elseif (Auth::user()->role == 'admin') {
-            // Admin: read-only access, check if penerimaan is from kasir with same layanan
-            $isReadOnly = true;
+            // Admin: full access, check if penerimaan is from kasir with same layanan
+            $isReadOnly = false;
             $adminLayanan = Auth::user()->layanan;
 
             if ($adminLayanan) {
@@ -227,14 +248,26 @@ class PenerimaanNoticeController extends Controller
      */
     public function edit(PenerimaanNotice $penerimaanNotice)
     {
-        // Check if kasir can only edit their own data
-        if (Auth::user()->role == 'kasir' && $penerimaanNotice->created_by != Auth::id()) {
+        // Only admin can edit
+        if (Auth::user()->role != 'admin') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Admin can only edit penerimaan from kasir with same layanan
+        $adminLayanan = Auth::user()->layanan;
+        if ($adminLayanan) {
+            $penerimaanCreator = $penerimaanNotice->creator;
+            if (!$penerimaanCreator || $penerimaanCreator->layanan_id != $adminLayanan->id) {
+                abort(403, 'Unauthorized action.');
+            }
+        } else {
             abort(403, 'Unauthorized action.');
         }
 
         $layanans = Layanan::all();
         $userLayananId = Auth::user()->layanan_id;
-        return view('layouts.penerimaan-notices.edit', compact('penerimaanNotice', 'layanans', 'userLayananId'));
+        $isReadOnly = false;
+        return view('layouts.penerimaan-notices.edit', compact('penerimaanNotice', 'layanans', 'userLayananId', 'isReadOnly'));
     }
 
     /**
@@ -242,8 +275,19 @@ class PenerimaanNoticeController extends Controller
      */
     public function update(Request $request, PenerimaanNotice $penerimaanNotice)
     {
-        // Check if kasir can only update their own data
-        if (Auth::user()->role == 'kasir' && $penerimaanNotice->created_by != Auth::id()) {
+        // Only admin can update
+        if (Auth::user()->role != 'admin') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Admin can only update penerimaan from kasir with same layanan
+        $adminLayanan = Auth::user()->layanan;
+        if ($adminLayanan) {
+            $penerimaanCreator = $penerimaanNotice->creator;
+            if (!$penerimaanCreator || $penerimaanCreator->layanan_id != $adminLayanan->id) {
+                abort(403, 'Unauthorized action.');
+            }
+        } else {
             abort(403, 'Unauthorized action.');
         }
 
@@ -251,7 +295,7 @@ class PenerimaanNoticeController extends Controller
             'tanggal' => ['required', 'date'],
             'nomor_awal' => ['required', 'integer', 'min:1'],
             'nomor_akhir' => ['required', 'integer', 'min:1', 'gte:nomor_awal'],
-            'lokasi_id' => ['required', 'exists:layanan,id'],
+            'lokasi_id' => ['required', 'exists:lokasi,id'],
         ]);
 
         // Calculate jumlah
@@ -265,8 +309,41 @@ class PenerimaanNoticeController extends Controller
             'lokasi_id' => $request->lokasi_id,
         ]);
 
-        return redirect()->route('penerimaan-notices.index')
+        return redirect()->route('admin.penerimaan-notices.index')
             ->with('success', 'Penerimaan Notice berhasil diperbarui.');
+    }
+
+    /**
+     * Remove the specified penerimaan notice from storage.
+     */
+    public function destroy(PenerimaanNotice $penerimaanNotice)
+    {
+        // Only admin can delete
+        if (Auth::user()->role != 'admin') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Admin can only delete penerimaan from kasir with same layanan
+        $adminLayanan = Auth::user()->layanan;
+        if ($adminLayanan) {
+            $penerimaanCreator = $penerimaanNotice->creator;
+            if (!$penerimaanCreator || $penerimaanCreator->layanan_id != $adminLayanan->id) {
+                abort(403, 'Unauthorized action.');
+            }
+        } else {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Check if penerimaan has any pengeluaran
+        if ($penerimaanNotice->pengeluaran()->count() > 0) {
+            return redirect()->route('admin.penerimaan-notices.index')
+                ->with('error', 'Tidak dapat menghapus penerimaan yang sudah memiliki pengeluaran.');
+        }
+
+        $penerimaanNotice->delete();
+
+        return redirect()->route('admin.penerimaan-notices.index')
+            ->with('success', 'Penerimaan Notice berhasil dihapus.');
     }
 
     /**
