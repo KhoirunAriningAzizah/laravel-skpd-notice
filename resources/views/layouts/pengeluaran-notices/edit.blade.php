@@ -380,10 +380,10 @@
                                 </div>
 
                                 <div class="card-footer text-right">
-                                    <a href="{{ route('admin.pengeluaran-notices.index') }}" class="btn btn-secondary">
+                                    <a href="{{ route('admin.pengeluaran-notices.index') }}" class="btn btn-danger">
                                         <i class="fas fa-times"></i> Batal
                                     </a>
-                                    <button type="submit" class="btn btn-primary">
+                                    <button type="submit" class="btn btn-success">
                                         <i class="fas fa-save"></i> Update Pengeluaran
                                     </button>
                                 </div>

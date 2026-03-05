@@ -353,10 +353,10 @@
 
                                 <div class="card-footer text-right">
                                     <a href="{{ route('penerimaan-notices.show', $penerimaanNotice->id) }}"
-                                        class="btn btn-secondary">
+                                        class="btn btn-danger">
                                         <i class="fas fa-times"></i> Batal
                                     </a>
-                                    <button type="submit" class="btn btn-primary">
+                                    <button type="submit" class="btn btn-success">
                                         <i class="fas fa-save"></i> Simpan Pengeluaran
                                     </button>
                                 </div>

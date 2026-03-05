@@ -116,10 +116,10 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <button type="submit" class="btn btn-primary">
+                                        <button type="submit" class="btn btn-success">
                                             <i class="fas fa-save"></i> Simpan
                                         </button>
-                                        <a href="{{ route('admin-users.index') }}" class="btn btn-secondary">
+                                        <a href="{{ route('admin-users.index') }}" class="btn btn-danger">
                                             <i class="fas fa-times"></i> Batal
                                         </a>
                                     </div>

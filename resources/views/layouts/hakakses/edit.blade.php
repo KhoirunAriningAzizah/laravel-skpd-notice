@@ -7,12 +7,12 @@
 @endpush
 
 @section('content')
-<div class="main-content">
-    <section class="section">
-        <div class="section-header">
-            <h1>Edit Data Hak Akses</h1>
-        </div>
-        <form action="{{ route('hakakses.update', $hakakses->id) }}" method="POST">
+    <div class="main-content">
+        <section class="section">
+            <div class="section-header">
+                <h1>Edit Data Hak Akses</h1>
+            </div>
+            <form action="{{ route('hakakses.update', $hakakses->id) }}" method="POST">
                 @csrf
                 @method('PUT')
 
@@ -22,9 +22,9 @@
                 </div>
 
 
-                <button type="submit" class="btn btn-primary">Update</button>
+                <button type="submit" class="btn btn-success">Update</button>
             </form>
-        </div>
+    </div>
     </section>
-</div>
+    </div>
 @endsection
